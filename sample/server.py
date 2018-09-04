@@ -49,24 +49,27 @@ ocr = cv2.text.OCRTesseract_create()
 original = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABUUlEQVQ4T43TP0iVURzG8c8VJEEQpIZ0CdRB1HAI3Ezc2qzBSREXkYiCcGiKahDxDyJIDSrh2qCbi+DsIA4uOuiiFBI4BBfuZsSRcy5v13vve9/tnN/vfM/vec7zFlT/evAHNzXq5e1ClYYZPEQH9rBfD1IJGMYzrMVDy1jHFdrxAd/i+q6lEjCNMxzhMYKUv/iN12jGCi7TVAnwBJ04xksMognneIQHWMB3TGUlJcAG3uINfuFHDd0DGMen7AT9mIi6TnCY4/wL9Caf0gQj+IzRnMPh5k28QiuWEqAPY1FnPcZHbOE6elVKgKd4jq95wcnUwxTFBAiOL0ZzSg1AgtnhZVazOejGJL7kAOaxHZ/4XpBCBoo4wFAMULjpJ8Jks7F2URmktJ6LSQwOd+EWLWiLEt/FjJzWAoT99zGquxkpIY0hyjsoH672LzTg3/8t/wCs6Tqb27/Z5AAAAABJRU5ErkJggg=='
 result = original
 list = ["sa","mpl","e"]
+areaPercentage = 0
 
-def order(x,y):
-	if x > y:
-		return y, x
-	else:
-		return x, y
 
-def tesseract(img, x, y, w, h):
-	ret, mask = cv2.threshold(img, 255, 255, cv2.THRESH_BINARY) # make black mask
-	print(x ,y ,w, h)
-	x_min, x_max = order(x, w)
-	for i in range(x_min, x_max):
-		y_min, y_max = order(y, h)
-		for j in range(y_min, y_max):
-			mask[j][i] = 0
-	ret = ocr.run(img, mask, 1)
-	tmp_img = img[y:y+h, x:x+w]
-	return ocr.run(tmp_img, 1)
+def getAreaSize(points):
+
+    result = 0.0
+
+    for index,point in enumerate(points):
+        x0 = point[0]
+        y0 = point[1]
+
+        x1 = points[(index+1) % len(points)][0]
+        y1 = points[(index+1) % len(points)][1]
+
+        result += (x0 - x1) * (y0 + y1)
+
+    logger.debug(result)
+
+    return abs(result / 2)
+
+
 
 def captch_ex(file):
 
@@ -88,17 +91,24 @@ def captch_ex(file):
     logger.debug(list)
 
 
+    totalAreaSize = 0.0
+
     for index,d in  enumerate(result_json["responses"][0]["textAnnotations"]):
-        logger.debug(d["boundingPoly"]["vertices"])
         vertices = d["boundingPoly"]["vertices"]
-        pts = np.array([[e["x"],e["y"]] for e in vertices], np.int32)
+        points = [[e["x"],e["y"]] for e in vertices]
+        pts = np.array(points, np.int32)
         pts = pts.reshape((-1,1,2))
         colorTuple = (255,100,100)
         if index == 0:
             colorTuple = (100,255,100)
+        else:
+            totalAreaSize += getAreaSize(points)
 
         result = cv2.polylines(result,[pts],True,colorTuple, 3)
 
+    global areaPercentage
+    areaPercentage = totalAreaSize / (original.shape[0] * original.shape[1]) * 100
+    areaPercentage = round(areaPercentage,2)
 
     cv2.imwrite('/usr/local/src/original.png', original)
     cv2.imwrite('/usr/local/src/result.png', result)
@@ -107,7 +117,7 @@ def captch_ex(file):
 
 @route('/')
 def index():
-    return template('form', original=original, result=result, list=list)
+    return template('form', original=original, result=result, list=list, areaPercentage=areaPercentage)
 
 
 @route('/upload', method='POST')

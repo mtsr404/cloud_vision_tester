@@ -1,8 +1,8 @@
-<div style='height:10%'>
-  <h1>presented by matsushiro</h1>
+<div >
+  <h3>presented by matsushiro</h3>
   <form action="/upload" method="post" enctype="multipart/form-data">
     <div class="form-group">
-      <label class="control-label" for="upload">Select a image file:
+      <label class="control-label" for="upload">Select a image file(only jpg):
       <input type="file" name="upload">
     </div>
     <div class="form-group">
@@ -29,5 +29,6 @@
       <li style='font-size:1.5em;'>{{l}}</li>
     %end
     </ul>
+	<p style='font-size:1.5em;'>加工部分占拠率:{{areaPercentage}}%</p>
   </div>
 </div>
