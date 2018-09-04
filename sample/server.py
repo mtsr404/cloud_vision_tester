@@ -4,11 +4,13 @@ import os
 import cv2
 import sys
 import os.path
+from os.path import join, dirname
 import tempfile
 import base64
 import requests
 import json
 import numpy as np
+from dotenv import load_dotenv
 
 from logging import getLogger, StreamHandler, DEBUG
 logger = getLogger(__name__)
@@ -19,7 +21,10 @@ logger.addHandler(handler)
 logger.propagate = False
 
 
-API_KEY = "AIzaSyCJ-a12ftbkW1silfpbElVC0Du8hL20JRk"
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
+API_KEY = os.environ.get("API_KEY") # 環境変数の値をAPに代入
+
 def text_detection(image_path):
     api_url = 'https://vision.googleapis.com/v1/images:annotate?key={}'.format(API_KEY)
     with open(image_path, "rb") as img:
@@ -43,7 +48,7 @@ def text_detection(image_path):
 ocr = cv2.text.OCRTesseract_create()
 original = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABUUlEQVQ4T43TP0iVURzG8c8VJEEQpIZ0CdRB1HAI3Ezc2qzBSREXkYiCcGiKahDxDyJIDSrh2qCbi+DsIA4uOuiiFBI4BBfuZsSRcy5v13vve9/tnN/vfM/vec7zFlT/evAHNzXq5e1ClYYZPEQH9rBfD1IJGMYzrMVDy1jHFdrxAd/i+q6lEjCNMxzhMYKUv/iN12jGCi7TVAnwBJ04xksMognneIQHWMB3TGUlJcAG3uINfuFHDd0DGMen7AT9mIi6TnCY4/wL9Caf0gQj+IzRnMPh5k28QiuWEqAPY1FnPcZHbOE6elVKgKd4jq95wcnUwxTFBAiOL0ZzSg1AgtnhZVazOejGJL7kAOaxHZ/4XpBCBoo4wFAMULjpJ8Jks7F2URmktJ6LSQwOd+EWLWiLEt/FjJzWAoT99zGquxkpIY0hyjsoH672LzTg3/8t/wCs6Tqb27/Z5AAAAABJRU5ErkJggg=='
 result = original
-list = []
+list = ["sa","mpl","e"]
 
 def order(x,y):
 	if x > y:
@@ -77,16 +82,22 @@ def captch_ex(file):
     original = cv2.imread(file_name)
     result = original.copy()
 
-    logger.debug(result_json)
 
-    for d in result_json["responses"][0]["textAnnotations"][1:]:
+    global list
+    list = result_json["responses"][0]["fullTextAnnotation"]["text"].split("\n")
+    logger.debug(list)
+
+
+    for index,d in  enumerate(result_json["responses"][0]["textAnnotations"]):
         logger.debug(d["boundingPoly"]["vertices"])
         vertices = d["boundingPoly"]["vertices"]
         pts = np.array([[e["x"],e["y"]] for e in vertices], np.int32)
         pts = pts.reshape((-1,1,2))
-        logger.debug(vertices)
-        result = cv2.polylines(result,[pts],True,(255,100,100), 3)
+        colorTuple = (255,100,100)
+        if index == 0:
+            colorTuple = (100,255,100)
 
+        result = cv2.polylines(result,[pts],True,colorTuple, 3)
 
 
     cv2.imwrite('/usr/local/src/original.png', original)
