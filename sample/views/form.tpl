@@ -30,6 +30,8 @@
     %end
     </ul>
     <h2>文字面積占拠率</h2>
-	<p style='font-size:1.5em;'>{{areaPercentage}}%</p>
+    <ul>
+		<li><p style='font-size:1.5em;'>{{areaPercentage}}%</p></li>
+    </ul>
   </div>
 </div>
