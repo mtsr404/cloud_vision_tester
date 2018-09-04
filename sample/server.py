@@ -77,12 +77,14 @@ def captch_ex(file):
     original = cv2.imread(file_name)
     result = original.copy()
 
+    logger.debug(result_json)
+
     for d in result_json["responses"][0]["textAnnotations"][1:]:
         logger.debug(d["boundingPoly"]["vertices"])
         vertices = d["boundingPoly"]["vertices"]
         pts = np.array([[e["x"],e["y"]] for e in vertices], np.int32)
         pts = pts.reshape((-1,1,2))
-        # logger.debug(vertices)
+        logger.debug(vertices)
         result = cv2.polylines(result,[pts],True,(255,100,100), 3)
 
 
